@@ -1,0 +1,49 @@
+name: Accessibility (WCAG 2.2 AA)
+
+# Builds Storybook and runs scripts/ada-check.mjs (Playwright + axe-core) on
+# every story. The job fails on console errors, empty renders, or axe
+# violations in Issue / Proposal / Overview stories. "Before" stories document
+# existing presto-2026 defects, so their findings are reported without failing.
+#
+# (@storybook/test-runner 0.24 can't load its config under Storybook 10.6 —
+# Jest rejects module.register() — so this checker replaces it.)
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  a11y:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Build Storybook
+        run: pnpm build-storybook
+        env:
+          STORYBOOK_DISABLE_TELEMETRY: "1"
+          VITE_IMAGERY_URL: "https://epprestodesign.github.io/presto-ds-imagery"
+
+      - name: Check generated issue index is committed
+        run: git diff --exit-code -- src/ada/_kit/issue-index.generated.js
+
+      - name: Run accessibility check on every story
+        run: pnpm a11y:ci

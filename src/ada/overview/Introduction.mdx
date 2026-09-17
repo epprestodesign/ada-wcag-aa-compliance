@@ -1,0 +1,103 @@
+import { Meta } from '@storybook/addon-docs/blocks'
+
+<Meta title="Overview/Introduction" />
+
+# ADA / WCAG 2.1 AA Compliance
+
+A walkthrough of every issue in the Linear project
+[ADA / WCAG 2.1 AA Compliance](https://linear.app/eventpipe/project/ada-wcag-21-aa-compliance-8122fef6668b).
+It shows what each one flags, what the same element looks like in the Presto
+redesign today, and how we propose to fix it. Everything is built with the
+[Presto design system](https://epprestodesign.github.io/presto-2026/): the same
+Vue 3, Quasar, Storybook and design tokens.
+
+> Linear is the source of truth. Issues were read on **2026-09-17**, and this
+> Storybook doesn't change any status, comment or field there. Each issue page
+> links back to its ticket.
+
+## How it's organized
+
+The sidebar mirrors the Linear project. **Epics** (Linear milestones) are the
+top-level folders, and every **issue** is one component inside them.
+
+| Epic | Codebase | Issues |
+|---|---|---|
+| Epic 1 – fuse | Vue 3 / Quasar SPA ("Presto" booking engine) | ADA-FUSE-00 → 07 |
+| Epic 2 – platform Reservation Flow | Go Buffalo monolith | ADA-PLAT-RES-00 → 07 |
+| Epic 3 – platform Group Block Flow | Go Buffalo monolith | ADA-PLAT-GRP-01 → 05 |
+| Epic 4 – platform Guest Self-Service | Go Buffalo monolith | ADA-PLAT-AUTH-01 |
+| Epic 5 – platform Order Management | Go Buffalo monolith | ADA-PLAT-MGMT-00 → 04 |
+| Epic 6 – blitz Live Inventory | Vue 3 / Quasar app | ADA-BLITZ-RES-00 → 05 |
+
+**All Issues** has the full table with live counts.
+
+## Reading an issue
+
+Every issue component has the same three stories. The numbered **items** match
+the numbered problems in the Linear ticket, and item *N* is the same element in
+all three stories.
+
+1. **Issue**: what Linear reports for each item: the element type, the
+   production file and line, the flawed pattern, and a contrast readout where
+   color is involved. Each item also gets a **cross-check** from an
+   [accessibility-agents](https://github.com/Community-Access/accessibility-agents)
+   specialist (see **Cross-Check Agents**). The full Linear description is
+   included word for word behind a disclosure.
+2. **Before**: the same element in **presto-2026**, rendered from the real
+   design-system components, with a verdict for each item:
+   - **Issue still present in presto-2026**: the redesign repeats the defect.
+   - **Partially present**: some of it is already right.
+   - **Already handled in presto-2026**: the redesign already fixes it.
+   - **No presto-2026 equivalent yet**: the redesign doesn't include that
+     screen yet.
+3. **Proposal**: **Option A** is always the fix from Linear's acceptance
+   criteria. **Option B/C** appear only where a specialist agent suggests a
+   meaningfully different approach, and are labeled *agent-suggested — not in
+   Linear*. Demos are live, so press Tab through them.
+
+### Item labels
+
+- **Confirmed**: verified against production source.
+- **Corrected in Linear**: an earlier draft was wrong, and the ticket carries
+  the corrected claim.
+- **New finding**: found during Linear's verification pass.
+- **Refuted — no change**: Linear disproved the original claim. The item stays
+  visible so nobody "fixes" it later.
+- **Needs JS verification**: Linear notes it can't be confirmed from templates
+  alone.
+
+### Agent verdicts
+
+- **Agrees with Linear**: the specialist's rules confirm the finding and the
+  fix.
+- **Agent note**: agrees, but adds a nuance, a corrected number or a better
+  pattern.
+- **Disagrees with Linear**: the specialist's rules conflict with the ticket.
+  Linear's text is never changed; the disagreement is recorded for the team to
+  resolve.
+
+## Automated checks
+
+Every story runs **axe-core** (WCAG 2.x A/AA) in the **Accessibility** panel.
+*Before* stories may show findings on purpose, since they document the
+problem. *Proposal* stories should be clean. Contrast swatches intentionally
+render failing colors and are excluded from axe; the ratio next to each one is
+the result.
+
+AI and automated tools miss things. Confirm every proposal with VoiceOver,
+NVDA, JAWS and keyboard-only testing before shipping.
+
+## Working in this repo
+
+```bash
+pnpm install
+pnpm storybook                 # http://localhost:6006
+pnpm ada:index                 # regenerate the All Issues counts
+pnpm ada:check <story-id> …    # screenshot + axe a story (needs Storybook running)
+pnpm build-storybook
+```
+
+To add or update an issue, follow `src/ada/_kit/AUTHORING.md`. The
+accessibility-agents plugin is enabled at project scope in
+`.claude/settings.json`, so Claude Code sessions in this repo load the same
+specialists.

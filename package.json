@@ -1,0 +1,37 @@
+{
+  "name": "ada-wcag-aa-compliance",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ADA / WCAG 2.1 AA Compliance \u2014 issue-by-issue audit & remediation proposals, built on the Presto design system.",
+  "type": "module",
+  "scripts": {
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "node scripts/gen-issue-index.mjs && storybook build -o storybook-static",
+    "a11y:ci": "concurrently -k -s first -n SB,A11Y \"http-server storybook-static -p 6006 -a 127.0.0.1 -s\" \"wait-on -t 60000 tcp:127.0.0.1:6006 && node scripts/ada-check.mjs --all\"",
+    "ada:check": "node scripts/ada-check.mjs",
+    "ada:index": "node scripts/gen-issue-index.mjs"
+  },
+  "dependencies": {
+    "@googlemaps/markerclusterer": "^2.6.2",
+    "@quasar/extras": "^1.16.12",
+    "marked": "^18.0.13",
+    "quasar": "2.19.3",
+    "vue": "3.5.35"
+  },
+  "devDependencies": {
+    "@quasar/vite-plugin": "^1.9.0",
+    "@storybook/addon-a11y": "^10.6.0",
+    "@storybook/addon-docs": "^10.6.0",
+    "@storybook/addon-themes": "^10.6.0",
+    "@storybook/vue3-vite": "^10.6.0",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "axe-core": "^4.13.0",
+    "concurrently": "^9",
+    "http-server": "^14",
+    "playwright": "1.63.0",
+    "sass-embedded": "^1.83.0",
+    "storybook": "^10.6.0",
+    "vite": "^6.0.0",
+    "wait-on": "^8"
+  }
+}
