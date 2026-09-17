@@ -15,6 +15,38 @@ Vue 3, Quasar, Storybook and design tokens.
 > Storybook doesn't change any status, comment or field there. Each issue page
 > links back to its ticket.
 
+<div style={{ background: '#01113E', color: '#fff', borderRadius: '12px', padding: '20px 24px', margin: '24px 0', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+  <div>
+    <div style={{ fontSize: '1.125rem', fontWeight: 700, color: '#fff' }}>▶ Try the accessible prototype</div>
+    <div style={{ marginTop: '4px', maxWidth: '62ch' }}>
+      <span style={{ color: '#fff' }}>The same end-to-end booking journey as presto-2026 — <strong style={{ color: '#fff' }}>Book Reservation</strong> and <strong style={{ color: '#fff' }}>Group Block</strong> — rebuilt against the <strong style={{ color: '#fff' }}>remediated</strong> design system in <code style={{ color: '#fff' }}>src/presto-a11y/</code>. Tab through it: visible focus, a skip link, real headings, named controls and announced status. Any screen deep-links, e.g. <code style={{ color: '#fff' }}>?screen=checkout</code>.</span>
+    </div>
+  </div>
+  <a href={typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:6100/' : 'https://epprestodesign.github.io/ada-wcag-aa-compliance/prototype/'} target="_blank" rel="noopener"
+     style={{ background: '#fff', color: '#01113E', fontWeight: 700, padding: '12px 20px', borderRadius: '8px', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+    Launch prototype ↗
+  </a>
+</div>
+
+<div style={{ background: '#0b1020', color: '#fff', borderRadius: '12px', padding: '20px 24px', margin: '24px 0', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+  <div>
+    <div style={{ fontSize: '1.125rem', fontWeight: 700, color: '#fff' }}>📱 Accessible mobile prototype</div>
+    <div style={{ marginTop: '4px', maxWidth: '62ch' }}>
+      <span style={{ color: '#fff' }}>The same remediated journey in a <strong style={{ color: '#fff' }}>phone frame (360–414px)</strong>. Use it to check the fixes that only matter on mobile: target sizes, zoom, reading order where the checkout rail reflows, and the mobile nav.</span>
+    </div>
+  </div>
+  <a href={typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:5174/' : 'https://epprestodesign.github.io/ada-wcag-aa-compliance/prototype-mobile/'} target="_blank" rel="noopener"
+     style={{ background: '#fff', color: '#0b1020', fontWeight: 700, padding: '12px 20px', borderRadius: '8px', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+    Launch mobile ↗
+  </a>
+</div>
+
+<div style={{ background: '#F1F5F9', border: '1px solid #CBD5E1', borderRadius: '12px', padding: '16px 20px', margin: '24px 0' }}>
+  <strong>Comparing against today?</strong> The unmodified originals stay live in the design-system repo —{' '}
+  <a href="https://epprestodesign.github.io/presto-2026/prototype/" target="_blank" rel="noopener">presto-2026 prototype ↗</a> and{' '}
+  <a href="https://epprestodesign.github.io/presto-2026/prototype-mobile/" target="_blank" rel="noopener">mobile ↗</a>. Open one beside the accessible copy to see each proposal in place. Running locally: <code>pnpm prototype</code> (port 6100) and <code>pnpm prototype-mobile</code> (port 5174).
+</div>
+
 ## How it's organized
 
 The sidebar mirrors the Linear project. **Epics** (Linear milestones) are the

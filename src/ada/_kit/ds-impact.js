@@ -1,0 +1,647 @@
+// Design-system impact of the audit: every change the 33 issues' proposals
+// imply for presto-2026 (vendored at src/presto/**), deduplicated across
+// issues — one row per distinct change, listing every issue that drives it.
+//
+// Scope: design-system work only. Fixes that touch only fuse, platform or
+// blitz production code stay in their own issue. Rows marked type:'new' are
+// components/screens presto-2026 doesn't have yet but production does.
+//
+// Every contrast ratio here was recomputed with src/presto/stories/_contrast.js
+// against the vendored source, not copied from the tickets.
+//
+// A few rows were found while BUILDING the remediation (src/presto-a11y) rather
+// than during the audit: their `today` says so. They are attributed to the issue
+// whose screen surfaced them.
+
+export const LAYERS = [
+  { key: 'tokens', title: 'Tokens & color', hint: 'Color tokens and palette steps in src/presto/css' },
+  { key: 'foundations', title: 'Foundations & global styles', hint: 'App shell, global CSS, landmarks, utilities' },
+  { key: 'components', title: 'Components', hint: 'Individual presto-2026 components' },
+  { key: 'patterns', title: 'Patterns, conventions & new screens', hint: 'Cross-component rules and screens the redesign lacks' },
+]
+
+const r = (layer, type, item, target, today, proposed, issues, wcag) => ({ layer, type, item, target, today, proposed, issues, wcag })
+
+export const DS_IMPACT = [
+  /* ---------------------------------------------------------- tokens */
+  r('tokens', 'update', 'Subtlest text token is unreadable',
+    'css/ds-color-tokens.scss:8 → ds-palette.scss slate-400; used as body copy in ~30 places (CartReview.vue:457, RoomCardReserve.vue:96, RoomBookingDialog.vue:245, ManageBooking.vue:285)',
+    '--ds-color-text-subtlest resolves to Slate 400 #94A3B8 — 2.56:1 on white, 2.44:1 on the page canvas — yet it colors real sentences such as "Rates are quoted in USD ($)." and "Not provided".',
+    'Repoint the token to Slate 600 #475569 (7.58:1) for any text role — Slate 500 #64748B (4.76:1) at minimum — and restrict Slate 400 to non-text decoration (placeholders, disabled fills, rules).',
+    ['ENG-2925', 'ENG-2926', 'ENG-2928', 'ENG-2933', 'ENG-2936', 'ENG-2943', 'ENG-2950', 'ENG-2954'], ['1.4.3']),
+
+  r('tokens', 'update', 'Urgency / availability text uses a raw orange palette step',
+    'ds-palette.scss orange-600, hard-coded in 9 components (HotelCardReserve.vue:155, HotelCardHorizontal.vue:165, HotelCardGroup.vue:180, RoomAvailability.vue:101, HotelListPage.vue:451, RoomCardReserve.vue:90, RoomCardGroup.vue:146, RoomBookingDialog.vue:241, CartReview.vue:425)',
+    '"Only 2 left" and "Adjust your search parameters" render in --ds-palette-orange-600 #EA580C at 15–16px/600–700 — 3.56:1, and too small to qualify as large text.',
+    'Move all nine to the semantic --ds-color-text-warning (Yellow 700 #A16207, 4.92:1), or add --ds-color-text-warning-strong → Orange 700 #C2410C (5.18:1) if the orange hue must stay; keep Orange 600 for icons and fills.',
+    ['ENG-2924', 'ENG-2926', 'ENG-2930', 'ENG-2933', 'ENG-2952'], ['1.4.3']),
+
+  r('tokens', 'update', 'Danger text fails on the danger surface',
+    'css/ds-color-tokens.scss:12 (--ds-color-text-danger → red-600) paired with :47 (--ds-color-background-danger → red-50); rendered in stories/feedback/Alert.stories.js:37',
+    'Red 600 #DC2626 passes on white (4.83:1) but reaches only 4.41:1 on the red-50 tint the alert and error pills actually use, so the one danger token silently fails on tinted surfaces.',
+    'Add a paired on-tint token → Red 800 #991B1B (7.60:1 on red-50) and record the validated pairing in the Color Contrast foundation story, so danger text is never checked against white alone.',
+    ['ENG-2942', 'ENG-2953'], ['1.4.3']),
+
+  r('tokens', 'new', 'No status color tokens exist',
+    'css/ds-color-tokens.scss (only background-danger/warning/success/info at :47-54); Quasar $positive/$warning in quasar.variables.scss:24,26',
+    'presto-2026 has no status token family at all, so every surface hand-rolls Quasar color names: white on $positive is 3.30:1 and white on $warning 1.53:1.',
+    'Add one token per status, solid fill with white text: Upcoming/Expired → Amber 700 #B45309 (5.02:1), Cancelled → Red 700 #B91C1C (6.47:1), Waitlisted/Past → Slate 600 #475569 (7.58:1), Processed → Emerald 700 #047857 (5.48:1), Confirmed → Green 700 #15803D (5.02:1), plus a tinted 800-on-50 alternate set (6.84–9.45:1).',
+    ['ENG-2949', 'ENG-2952'], ['1.4.3', '1.4.11']),
+
+  r('tokens', 'update', 'No contrast contract for tenant brand colors',
+    'css/quasar.variables.scss:16-18 ($primary, $secondary, $accent)',
+    "presto's own brand values pass (Navy 900 18.24:1, Slate 600 7.58:1), but they're plain SASS literals with nothing validating a tenant-supplied replacement — the same hole that lets production ship #8C92A0 at 3.12:1.",
+    'Add a safeBrand(hex, fallback) guard wherever brand vars are set at runtime: measure the tenant color against the surface and fall back to the passing DS value below 4.5:1.',
+    ['ENG-2922'], ['1.4.3']),
+
+  /* ----------------------------------------------------- foundations */
+  r('foundations', 'update', 'No focus indicator anywhere in the system',
+    'css/app.scss — grep for "focus-visible" across all of src/presto returns zero hits',
+    "presto-2026 imports Quasar's CSS unchanged and defines no focus rule, so Quasar's built-in no-outline class leaves keyboard focus invisible on every control; the only cue is a 0.15-opacity tint identical on hover.",
+    'Add a global :focus-visible { outline: 2px solid var(--ds-color-border-focused); outline-offset: 2px } — Navy 900, 18.24:1 — and use the two-tone variant (white inner ring) on dark or brand-colored fills.',
+    ['ENG-2922', 'ENG-2930', 'ENG-2949'], ['2.4.7', '1.4.11']),
+
+  r('foundations', 'update', 'No <main> landmark and no skip link',
+    'components/PageFrame.vue:25 (<div class="pf__body">); first Tab stop is GlobalNav.vue:63',
+    'Every page body renders in a plain div, no <main> or role="main" exists anywhere in the system, and there is no skip link — so keyboard users tab the entire header on every screen.',
+    'Render the PageFrame slot inside <main id="main-content" tabindex="-1"> and emit a visually-hidden-until-focused "Skip to main content" anchor as the shell\'s first child.',
+    ['ENG-2922', 'ENG-2930', 'ENG-2944', 'ENG-2949'], ['2.4.1', '1.3.1']),
+
+  r('foundations', 'new', 'No visually-hidden (sr-only) utility',
+    'css/ds-utilities.scss — grep for sr-only / visually-hidden across src/presto returns nothing',
+    'The system has no supported way to ship screen-reader-only text, yet nearly every proposal in this audit — announced counts, loading status, star equivalents, new-tab warnings — depends on one.',
+    'Add a .sr-only (clip-path, 1px) utility to ds-utilities.scss and document it as the way to pair a visible icon or spinner with an announced label.',
+    ['ENG-2924', 'ENG-2951', 'ENG-2952', 'ENG-2954'], ['4.1.3', '2.4.4']),
+
+  r('foundations', 'update', 'Hero scrim is too light for the date line',
+    'components/LandingPage.vue:78-79 (+ .lp__dates 1.25rem/400 at :173); stories/foundations/HeroBanner.stories.js:32',
+    'The hero always composites rgba(0,0,0,.5) over the image, so a white event photo flattens to #808080: white text is 3.95:1 — the 40px title clears the large-text bar, the 20px date line does not.',
+    'Raise the shared hero scrim to rgba(0,0,0,.6) (flattens to #666666, white = 5.74:1) in both LandingPage and the Hero Banner foundation story, so any image passes.',
+    ['ENG-2923'], ['1.4.3']),
+
+  r('foundations', 'update', 'Two banner landmarks on detail pages',
+    'components/details/HotelSummaryHeader.vue:42 (<header class="dhead">) alongside GlobalNav.vue:62',
+    "HotelSummaryHeader's root is a <header> that isn't scoped inside an article or section, so it becomes a second banner landmark on every hotel detail page.",
+    'Change the root to <section class="dhead" aria-labelledby="…hotel-name"> (or nest it inside <main>), leaving GlobalNav as the only banner.',
+    ['ENG-2925'], ['1.3.1']),
+
+  /* ------------------------------------------------------- components */
+  r('components', 'update', 'DsModal / DsSidePanel — no focus management',
+    'components/DsModal.vue:34-51, :57 · DsSidePanel.vue:35 (no focus() call in either)',
+    'Both shells declare role="dialog" aria-modal="true" and close on Escape, but neither moves focus in on open, traps Tab, nor restores focus on close — so the aria-modal claim isn\'t honored and Tab walks the page behind the backdrop.',
+    'Record the opener, focus the dialog (or its least-destructive action), cycle Tab within the card, restore focus on close and mark the background inert — this fixes every dialog built on the shell at once.',
+    ['ENG-2926', 'ENG-2928', 'ENG-2948', 'ENG-2953'], ['2.4.3', '2.1.2', '2.1.1']),
+
+  r('components', 'update', 'DsModal names the dialog with a duplicated label',
+    'components/DsModal.vue:32, :57, :62 · DsSidePanel.vue:35',
+    'The dialog name is an aria-label copied from the title prop while an <h2 class="dsm__title"> also renders, so a custom #header slot replaces the heading but not the label and the two silently drift apart.',
+    'Generate a per-instance id with useId() on the visible <h2> and point aria-labelledby at it, falling back to aria-label only when the header is hidden.',
+    ['ENG-2948'], ['4.1.2']),
+
+  r('components', 'update', 'DsSectionHeader title is not a heading',
+    'components/DsSectionHeader.vue:11 (<div class="text-h6">), consumed by PoliciesSection.vue:17 and AmenitiesSection.vue:23',
+    'Every section built on DsSectionHeader — Property Policies, Amenities, price breakdowns — gets a styled div instead of a heading, so those sections are invisible to heading navigation.',
+    'Add a level prop (default 2) and render <component :is="`h${level}`" class="text-h6">, keeping the type scale in CSS.',
+    ['ENG-2926', 'ENG-2953', 'ENG-2954'], ['1.3.1', '2.4.6']),
+
+  r('components', 'update', 'Secondary text uses Quasar grey-7 on tinted surfaces',
+    'components/DsSectionHeader.vue:12 · DsEmptyState.vue:13',
+    "Both style their secondary line with Quasar's text-grey-7 (#757575): 4.61:1 on white, but 4.38:1 on the page canvas #F9F9FA — so it fails wherever the component sits on canvas or a sunken panel.",
+    'Replace text-grey-7 with var(--ds-color-text-subtle) (Slate 600): 7.58:1 on white, 7.20:1 on canvas, 6.95:1 on a grey panel.',
+    ['ENG-2951', 'ENG-2953'], ['1.4.3']),
+
+  r('components', 'update', 'DsEmptyState title is not a heading and is never announced',
+    'components/DsEmptyState.vue:10-12',
+    'The shared empty state renders its title as <div class="text-h6"> inside a plain div with no status role, so when a filter empties the results the message is both outside the outline and silent.',
+    'Render the title through a level prop (default h2) and give the wrapper role="status", so zero-result messages are announced as well as shown.',
+    ['ENG-2931', 'ENG-2951'], ['1.3.1', '2.4.6', '4.1.3']),
+
+  r('components', 'update', 'Star icons fall below the non-text contrast bar',
+    'components/DsRating.vue:34 (hard-coded #f59e0b) · confirmation/ConfirmationPage.vue:265 (orange-500)',
+    "DsRating's star is Amber 500 at 2.15:1 and the confirmation star is Orange 500 at 2.80:1 — both under the 3:1 bar for meaningful non-text, and DsRating bypasses the token system with a literal hex.",
+    'Move both to a token at or above 3:1 — Amber 600 #D97706 (3.19:1) as the floor, Amber 700 #B45309 (5.02:1) if stars ever render as text — and replace the literal hex with the token.',
+    ['ENG-2946'], ['1.4.11', '1.4.3']),
+
+  r('components', 'update', 'Star ratings have no text equivalent',
+    'browse/HotelCardReserve.vue:90 · details/HotelSummaryHeader.vue:51-53 (only a title tooltip)',
+    'Both the result card and the detail header draw the rating as q-icons, which Quasar hides from screen readers; the header\'s only textual cue is a title tooltip, which is unreliable and unreachable on touch.',
+    'Emit an sr-only "{n}-star hotel" beside the icons (or give the group role="img" with an aria-label) and mark the icon row aria-hidden.',
+    ['ENG-2924', 'ENG-2925', 'ENG-2946'], ['1.1.1', '1.3.1']),
+
+  r('components', 'update', 'Hotel name is not a heading; detail pages have no h1',
+    'details/HotelSummaryHeader.vue:49-50 — no <h1> exists anywhere under components/details',
+    'The page subject renders as <div class="dhead__name"><span>, so the hotel detail and reservation detail screens have no level-1 heading at all.',
+    'Render the name as <h1 class="dhead__name"> (or an `as`/level prop defaulting to h1), keeping the current styling.',
+    ['ENG-2925', 'ENG-2933', 'ENG-2946', 'ENG-2953'], ['1.3.1', '2.4.6']),
+
+  r('components', 'update', 'DetailTabs claims tab semantics it does not implement',
+    'details/DetailTabs.vue:28-39 · details/HotelDetailPage.vue:83-88',
+    'role="tablist" on the <nav> destroys the navigation landmark, the buttons have aria-selected but no aria-controls and no tabpanels, there is no arrow-key roving, and the control actually scrolls to in-page anchors.',
+    'Drop the tab roles and treat it as navigation: <nav aria-label="Hotel sections"> with anchor links and aria-current on the active section — or implement real tabs with panels and roving tabindex.',
+    ['ENG-2925', 'ENG-2926'], ['1.3.1', '4.1.2', '2.1.1']),
+
+  r('components', 'update', 'GalleryHero tiles are divs with a nested button',
+    'details/GalleryHero.vue:38-56',
+    'Each photo tile is a div role="button" named only by its image alt, and the last tile nests the "See all photos" button inside that role="button".',
+    'Make each tile a native <button> wrapping <img alt="">, with an explicit "Open photo gallery — {title}" name, and move the pill button out of the last tile so buttons are never nested.',
+    ['ENG-2933'], ['4.1.2', '2.1.1', '1.1.1']),
+
+  r('components', 'update', 'RoomBookingDialog carousel dots are clickable spans',
+    'components/RoomBookingDialog.vue:104-105',
+    'The dots carry a click handler but no tabindex, role or name, so keyboard users cannot reach them (the prev/next arrows are correctly labelled).',
+    'Make each dot a <button :aria-label="`Photo ${i+1}`" :aria-current="i === idx">, or hide them from assistive tech and rely on the labelled arrows.',
+    ['ENG-2926'], ['2.1.1', '4.1.2']),
+
+  r('components', 'update', 'A glyph is baked into a button name',
+    'details/RoomCardReserve.vue:59 ("Price Details ›")',
+    'The accessible name contains U+203A, so depending on punctuation verbosity screen readers read "right-pointing angle quotation mark" — the same defect class as production\'s string-concatenated chevron.',
+    'Remove the glyph from the text and render <q-icon name="chevron_right" aria-hidden="true"> (or a CSS ::after) so the name is exactly "Price Details".',
+    ['ENG-2925', 'ENG-2926'], ['1.3.1', '4.1.2']),
+
+  r('components', 'update', 'Per-night availability rows are unstructured span pairs',
+    'details/RoomCardReserve.vue:44-50 · same shape in details/RoomCardGroup.vue',
+    'Each night emits a div holding two bare spans ("Thu, 7/9/2026" and "5 left"), so nothing pairs a date with its availability or exposes how many rows there are.',
+    'Mark the night list as a <dl> with the date as <dt> and rooms-left as <dd> — the redesign\'s answer to the platform room table that lacks thead/th/caption.',
+    ['ENG-2933'], ['1.3.1']),
+
+  r('components', 'update', 'Carousel photo changes are never announced',
+    'browse/HotelCardReserve.vue:76, :79-82',
+    'The arrows are named and the image has no click handler, but pressing them swaps the slide with no live region, so nothing says which photo is showing.',
+    'Add an sr-only aria-live="polite" element inside the media block rendering "Photo {n} of {total}" on change.',
+    ['ENG-2924'], ['4.1.3']),
+
+  r('components', 'update', 'Every result card CTA has the identical name',
+    'browse/HotelCardReserve.vue:29, :111, :76 · HotelCardGroup.vue:136 · HotelCardHorizontal.vue:128',
+    'Each card renders "Choose Your Room" with no hotel name, so a screen-reader buttons list shows N identical entries; the thumbnail alt ("Hotel lobby") never names the property either.',
+    'Add :aria-label="`${ctaLabel} at ${name}`" to the CTA in all three card variants and compose the slide alt as "{alt} — {name}".',
+    ['ENG-2932'], ['2.4.4', '2.4.6', '1.1.1']),
+
+  r('components', 'update', 'Availability toggle has no aria-controls',
+    'browse/HotelCardReserve.vue:103-105',
+    'The toggle is a real button with aria-expanded — already better than production\'s clickable div — but the panel it opens has no id and the button no aria-controls.',
+    'Give the availability panel a unique id and point aria-controls at it.',
+    ['ENG-2924'], ['4.1.2', '1.3.1']),
+
+  r('components', 'update', 'Browse results: loading, empty and error states are silent',
+    'browse/HotelListPage.vue:298-313, :316-321, :324-329',
+    'Skeletons render with no status role or aria-busy, and the error and empty states swap in as plain divs, so a screen-reader user hears nothing when results change.',
+    'Wrap the results region with :aria-busy="isLoading" and role="status" aria-live="polite", announcing "Loading results", the error text, or the empty text as each state becomes active.',
+    ['ENG-2924'], ['4.1.3']),
+
+  r('components', 'update', 'Browse page heading outline starts at h3',
+    'browse/HotelListPage.vue:238 (<div class="text-h5">), :346 · every filter-rail .fr__title is an <h3>',
+    'HotelListPage has no h1 or h2 — the event name is a styled div — while filter titles and card names are h3, so the outline begins at level 3.',
+    'Promote the event title to <h1 class="text-h5">, add a visually-hidden <h2>Results</h2> above the card list, and re-level filter titles to h2.',
+    ['ENG-2932'], ['1.3.1', '2.4.6']),
+
+  r('components', 'update', 'Results count is not a live region',
+    'browse/ResultsToolbar.vue:28-39',
+    'The count updates silently whenever filters or sort change — presto adds the counter production lacks, but never announces it.',
+    'Put role="status" on .rtb__count so "{n} properties available · {m} filters applied" is announced after each change.',
+    ['ENG-2924'], ['4.1.3']),
+
+  r('components', 'update', 'Filter-rail controls have no accessible names',
+    'browse/filter-rail/SearchRadiusField.vue:25,:27 · ExactMatchesField.vue:16 · PropertyNameField.vue:17 · BudgetField.vue:31-35 · StarRatingField.vue:20-30',
+    'The radius slider and Exact Matches toggle have no name at all, property-name and budget rely on placeholders, and the star buttons are named "1"–"5" with selection shown only by a CSS class.',
+    'Name every control (aria-label or a real label), add :aria-pressed to the star and budget-basis buttons inside a named role="group", and give the slider aria-valuetext with its unit — presto\'s own DsChoiceChips already ships this pattern.',
+    ['ENG-2924', 'ENG-2932'], ['4.1.2', '3.3.2', '1.3.1']),
+
+  r('components', 'update', 'Filter-rail checkbox groups are not grouped',
+    'browse/filter-rail/ParentBrandField.vue:21-22 · RoomTypeField.vue:21-22 · AmenitiesField.vue:27-28 — <fieldset> appears zero times in src/presto',
+    'Each field renders an h3 title followed by bare checkboxes, so "King" is announced with no indication that it belongs to Room Type.',
+    'Wrap each field\'s options in <fieldset> with the existing title as <legend> (styled as today), or add role="group" + aria-labelledby.',
+    ['ENG-2924'], ['1.3.1']),
+
+  r('components', 'update', 'Filter-rail checkboxes are below the minimum target size',
+    'browse/filter-rail/ParentBrandField.vue:22 · RoomTypeField.vue:22 · AmenitiesField.vue:28 (dense q-checkbox)',
+    'Every rail checkbox is dense, which shrinks the hit area below 24×24 CSS px; axe flags target-size on the Filter Rail story. This is presto-only — production\'s rail is not dense.',
+    'Drop dense on the three lists, or give .fr__check a 24×24 minimum interactive area (44×44 preferred) and keep the visual density with negative margins.',
+    ['ENG-2924', 'ENG-2932'], ['2.5.8']),
+
+  r('components', 'update', 'Property-search input has no accessible name',
+    'browse/Filter.vue:387',
+    'The search branch renders a bare input with only a placeholder and no link to the "Search By Property Name" title above it, so it announces as "edit text".',
+    'Give it a real label/id pair (keeping the visible caption) and wrap the search branch in role="search" so it can be reached by landmark.',
+    ['ENG-2951'], ['3.3.2', '1.3.1', '4.1.2']),
+
+  r('components', 'update', 'Traveler steppers are unnamed and their value is never spoken',
+    'components/BookingWidget.vue:255-259',
+    'The +/- q-btns carry no aria-label and the count between them is a plain div, so each control announces as just "button" and the new value is never announced.',
+    'Reuse QuantityStepper inside a named role="group", or add "Decrease/Increase {field}" labels plus an sr-only polite live region for the value.',
+    ['ENG-2923'], ['4.1.2']),
+
+  r('components', 'update', 'Search performs no validation at all',
+    'components/BookingWidget.vue:277',
+    'The Search button has no click handler and no validation path — a blank booking type, location or team still starts a flow, nothing shows an error and focus never moves.',
+    'Add a submit handler that marks empty required fields with aria-invalid, links each message with aria-describedby, and moves focus to the first invalid field.',
+    ['ENG-2923'], ['3.3.1', '3.3.3', '4.1.2']),
+
+  r('components', 'update', 'Duplicate-team error is an unlinked div',
+    'components/BookingWidget.vue:293-297',
+    'The input uses :error with hide-bottom-space and the message is a sibling div with no id — the same detached-error pattern production has, so nobody hears why the field turned red.',
+    'Give the message an id, point aria-describedby at it, set aria-invalid on the input, and drop hide-bottom-space so Quasar\'s error slot can carry it.',
+    ['ENG-2923'], ['3.3.1', '1.3.1']),
+
+  r('components', 'update', 'Team popup: club grouping is visual only',
+    'components/BookingWidget.vue:183-191',
+    'Each club is a bold "select all" checkbox followed by an indented div of members — the grouping is pure indentation, so "Arsenal U12 Boys Gold" is announced with no club context.',
+    'Wrap each club in <fieldset> + <legend>, or role="group" + aria-labelledby, keeping the select-all inside the labelled region.',
+    ['ENG-2923'], ['1.3.1']),
+
+  r('components', 'update', 'Team popup: no selection or result count',
+    'components/BookingWidget.vue:55-59, :181, :190',
+    'Past one selection the trigger collapses to "Multiple Teams", and "No teams match" swaps in as a plain div — so neither the number selected nor the number matching the filter is ever announced.',
+    'Add one role="status" region inside the popup rendering "{n} selected · {m} teams shown", debounced while typing, and surface the count in the trigger text.',
+    ['ENG-2923'], ['4.1.3', '1.3.1']),
+
+  r('components', 'update', 'Team popup: unnamed close button, placeholder-only filter',
+    'components/BookingWidget.vue:168, :171',
+    'The popup close button has no aria-label and the filter input has only a placeholder, which disappears on input and is not a reliable name.',
+    'Add aria-label="Close" to the close button and give the filter a real label.',
+    ['ENG-2923'], ['4.1.2', '3.3.2']),
+
+  r('components', 'update', 'Team names are rendered through v-html unescaped',
+    'components/BookingWidget.vue:64-69 (highlight()), :179, :187',
+    'highlight() escapes only the search query, never the source text, and the result renders through v-html — so an organizer-entered team name is a stored-XSS vector. Not a WCAG item; it mirrors the v-html risk the audit flags in production.',
+    'Render matched and unmatched segments as separate spans with text interpolation, or sanitize with a DOMPurify allowlist that keeps structural tags.',
+    ['ENG-2954'], []),
+
+  r('components', 'update', 'QuantityStepper buttons have no subject',
+    'components/QuantityStepper.vue:41, :46-47',
+    'The labels are hard-coded "Decrease" / "Increase" / "Remove", so with four steppers on screen every button is called the same thing.',
+    'Add a required label/noun prop so names read "Decrease adults" / "Remove room", and include the noun in the live announcement ("2 adults").',
+    ['ENG-2923'], ['4.1.2']),
+
+  r('components', 'update', 'DisplayAd has no image, link or alt-text contract',
+    'components/DisplayAd.vue:4-21',
+    'DisplayAd renders a dashed placeholder div with only width/height/label props — no src, href or altText — so the redesign has no rule for marking up a real linked ad.',
+    'Add src, altText and optional redirectURL props: render a bare <img> when there is no URL and wrap it in an <a> only when one exists, never an <a> without href, with altText required from the ad record.',
+    ['ENG-2923'], ['1.1.1', '2.4.4']),
+
+  r('components', 'update', 'Hero logo is hard-coded, with no per-event naming',
+    'components/LandingPage.vue:91',
+    'The hero logo is a hard-coded EventPipe image; the component has no prop for the event or company logo, so the per-event alt-text problem production has ("Event Logo") has no redesign answer.',
+    'Add logoSrc / logoAlt props and derive the alt from the real event or company name — never the word "logo".',
+    ['ENG-2923'], ['1.1.1']),
+
+  r('components', 'new', 'No event-status state on the landing page',
+    'components/LandingPage.vue (nearest pattern: DsEmptyState.vue)',
+    'presto-2026 has no "booking ended" or "available soon" variant for the event landing page, so there is nothing to carry the event\'s state.',
+    'Design an event-status card: a <section aria-labelledby> whose heading states the condition in words, with the colored pill as decoration only, and role="status" applied only when the state changes after load.',
+    ['ENG-2931'], ['1.3.1', '2.4.6', '1.4.1']),
+
+  r('components', 'update', 'Map cluster bubbles are unreachable and unnamed',
+    'components/HotelMap.vue:230-239 (vs :213-217 hotel pills)',
+    'Hotel pills and the event pin pass gmpClickable and a title, so Google makes them focusable and named; the cluster renderer passes neither, leaving an unreachable div containing a bare number.',
+    'Add gmpClickable and title="{count} hotels in this area" to the cluster marker so clusters get the same focus and naming treatment as pills.',
+    ['ENG-2924'], ['2.1.1', '4.1.2']),
+
+  r('components', 'update', 'Map popup links fall back to href="#"',
+    'components/HotelMap.vue:145-149',
+    'Every popup renders two anchors — image and name — pointing at the same url, which defaults to "#" when the hotel record has none: a dead link that still takes a tab stop, plus a duplicate destination.',
+    'Render the image as a plain <img alt=""> and the name as a non-link heading when there is no url; when there is one, emit a single named link.',
+    ['ENG-2924'], ['2.4.4', '1.1.1']),
+
+  r('components', 'update', 'Map popup close button is hidden with CSS',
+    'components/HotelMap.vue:355-356',
+    "Google's built-in InfoWindow close button is display:none'd because the popup is meant to close by clicking away, which leaves keyboard users no way to dismiss it.",
+    'Restore the native close button (or render a labelled one inside the popup) and add Escape-to-close.',
+    ['ENG-2924'], ['2.1.1', '2.1.2']),
+
+  r('components', 'update', "Map price pill's name omits the price",
+    'components/HotelMap.vue:210-217',
+    "The pill's visible text is the nightly price, but the marker's accessible name is only the hotel name, so the number a sighted user sees is never spoken.",
+    'Set the title to "{name}, {price} per night" so the accessible name matches the visible label.',
+    ['ENG-2924'], ['1.1.1', '2.5.3']),
+
+  r('components', 'update', 'Checkout step headers are not headings or buttons',
+    'checkout/CheckoutPage.vue:167-172, :150',
+    'Each step title is a <span> inside a click-handling <header> with no role, tabindex or keyboard handler; the page has an h1 but step bodies start at h3/h4, and there is no nav, ordered list or aria-current for the wizard.',
+    'Render the step title as <h2>, move the expand/edit affordance onto a real <button aria-expanded aria-controls>, wrap the step heads in <nav aria-label="Checkout steps"><ol> with aria-current="step", and add visually-hidden "(completed)" text.',
+    ['ENG-2928', 'ENG-2936', 'ENG-2938'], ['1.3.1', '2.4.6', '4.1.2', '2.1.1']),
+
+  r('components', 'update', 'Upcoming checkout steps are dimmed below contrast',
+    'checkout/CheckoutPage.vue:255 (.ck__step.is-upcoming { opacity: .5 })',
+    'Blanket opacity flattens the 700-weight 16px step title to roughly #828690 on the page — 3.49:1 — and "upcoming" is signalled by dimming alone.',
+    'Dim only the non-text chrome (border, number badge) and color the upcoming title with a passing token such as Slate 600 (7.58:1), plus a text cue for the state.',
+    ['ENG-2936', 'ENG-2938'], ['1.4.3', '1.4.1']),
+
+  r('components', 'update', 'Advancing a step moves no focus and announces nothing',
+    'checkout/CheckoutPage.vue:97-98, :167-180',
+    'next() just increments the current step, collapsing one section and expanding the next — focus stays on a button that has scrolled out of view and nothing announces which step opened.',
+    'After next()/goEdit(), move focus to the newly opened step heading (tabindex="-1") and announce "Step 2 of 3, Contact information" in a polite region.',
+    ['ENG-2928'], ['2.4.3', '4.1.3']),
+
+  r('components', 'update', 'Mobile checkout reorders content with CSS only',
+    'checkout/CheckoutPage.vue:276 (.ck__railwrap--lead { order: -1 })',
+    'On phones the summary rail is pulled visually above the steps while the DOM keeps it after them, so reading and Tab order disagree with what is on screen.',
+    'Reorder the DOM to match the phone layout and use order to push the rail down on desktop instead, so visual, DOM and focus order agree at every breakpoint.',
+    ['ENG-2928'], ['1.3.2', '2.4.3']),
+
+  r('components', 'update', 'The hold timer is announced three different ways',
+    'components/HoldTimerPill.vue:49 · HoldTimerBanner.vue:37-41 · checkout/CheckoutPage.vue:198-204, :137-145',
+    'HoldTimerPill wraps a per-second clock in role="status" aria-live="polite" (so it can announce once a second for the whole hold), while the banner and the checkout rail timers are plain spans with no role, name or announcement.',
+    'Give all three one pattern: role="timer" with a name on the container, aria-live="off" on the ticking clock, and one sr-only polite region that announces only at milestones (10 min, 5 min, 1 min, expired).',
+    ['ENG-2928', 'ENG-2936'], ['4.1.3', '4.1.2']),
+
+  r('components', 'update', 'The hold cannot be extended and gives no warning',
+    'components/HoldTimerPill.vue · HoldTimerBanner.vue · checkout/CheckoutPage.vue:144, :203',
+    'The only expiry handling is a static note; the countdown simply stops at zero with no advance warning, no dismissal and no way to extend.',
+    'Add a warning at 20% remaining announced politely, plus an "Extend my hold" control that resets the countdown, so the limit can be extended at least once.',
+    ['ENG-2936'], ['2.2.1']),
+
+  r('components', 'new', 'Nothing handles hold expiry',
+    'components/HoldTimerPill.vue:25, :38 emit "expire" — grep for @expire across src/presto returns no consumer',
+    'The timer counts to zero and emits expire, but no screen listens: there is no session-expired dialog, no announcement when the hold lapses and no way to recover.',
+    'Build a session-expiry dialog on DsModal with role="alertdialog", aria-labelledby/describedby, focus trap and focus return, wired to the expire event, with an "Extend hold" affordance.',
+    ['ENG-2928'], ['4.1.2', '2.4.3', '2.2.1', '4.1.3']),
+
+  r('components', 'new', 'No processing state when an order is confirmed',
+    'checkout/CheckoutPage.vue:132 (confirm() calls $q.notify immediately)',
+    '"Book Now" fires a success notification straight away; there is no pending state, so presto has no equivalent of production\'s "processing, do not refresh" overlay.',
+    'Design a pending state: role="alertdialog" aria-modal with a name, focus moved in and trapped, aria-busy on the form, the submit disabled via aria-disabled, and the outcome announced before focus moves to the confirmation heading.',
+    ['ENG-2936'], ['4.1.2', '4.1.3', '2.4.3']),
+
+  r('components', 'update', 'Price rows are span pairs, not a description list',
+    'components/CartReview.vue:216-254 (.cr__kv rows)',
+    'Every price line — per-night, fees, taxes, totals, balance due — is a div holding two spans, so nothing associates a fee name with its amount (the confirmation page already uses a <dl> for exactly this data).',
+    'Re-mark the price card as a <dl> with <dt>/<dd> pairs (or a table with a caption), matching the confirmation page\'s existing treatment.',
+    ['ENG-2928'], ['1.3.1']),
+
+  r('components', 'update', 'The two price breakdowns disagree on headings',
+    'components/CartReview.vue:211-235 · checkout/OrderSummary.vue:47',
+    "CartReview's <h4>Price details</h4> exists only in the non-itemized branch, so the itemized breakdown used in the real checkout rail has no heading — and OrderSummary renders the same label as a div.",
+    'Hoist the heading above both CartReview branches and render OrderSummary\'s label at the same level, so both breakdowns expose the same outline.',
+    ['ENG-2928', 'ENG-2954'], ['1.3.1', '2.4.6']),
+
+  r('components', 'update', 'Per-night price fails contrast',
+    'components/CartReview.vue:432 (.cr__nightcost-p, green-600 at 14px/700)',
+    'The per-night price renders in --ds-palette-green-600 #16A34A on white: 3.30:1, which axe raises on every checkout frame.',
+    'Move it to Green 700 #15803D (5.02:1) or Green 800 #166534 (7.13:1), keeping green-600 only for the white-on-green discount pill.',
+    ['ENG-2938'], ['1.4.3']),
+
+  r('components', 'update', 'Expiration month/year selects have no names',
+    'checkout/PaymentForm.vue:64-72',
+    'Unlike its neighbours, the expiry pair sits in a div with a span instead of a label, so neither select has a name (axe reports select-name on every payment frame) and the single "Required" message is tied to neither.',
+    'Wrap the pair in <fieldset><legend>Expiration date</legend> with per-select labels, add cc-exp-month / cc-exp-year autocomplete, and give each select its own error node referenced by aria-describedby.',
+    ['ENG-2927', 'ENG-2935', 'ENG-2943', 'ENG-2947'], ['4.1.2', '3.3.2', '1.3.1']),
+
+  r('components', 'update', 'CVV help button sits inside the field label',
+    'checkout/PaymentForm.vue:71-74',
+    'The info trigger is a correctly-named native button, but it lives inside the label, so "About the security code" folds into the input\'s accessible name — and interactive content inside a label is invalid.',
+    'Move the button out of the label to sit beside it, and connect the hint to the input with an id and aria-describedby.',
+    ['ENG-2935'], ['1.3.1', '4.1.2']),
+
+  r('components', 'update', 'Several guest fields have no accessible name',
+    'checkout/ReservationGuests.vue:138-142, :150-156, :177-188, :206-214',
+    'Most fields use a wrapping label, but Mobile number, Country, the custom fields and additional emails use a div with a bare span, so their controls have no programmatic name — axe reports select-name on Country.',
+    'Convert those wrappers to real labels (or give the span an id and use aria-labelledby), and name the phone country-code button "Country calling code, currently +1".',
+    ['ENG-2927', 'ENG-2928', 'ENG-2934', 'ENG-2935'], ['4.1.2', '3.3.2', '1.3.1']),
+
+  r('components', 'update', 'Repeated remove buttons share one name and drop focus',
+    'checkout/ReservationGuests.vue:255, :154, :85-86',
+    'Remove is a real button with a label, but every copy is named just "Remove guest" / "Remove email", and the splice leaves focus nowhere when the focused row disappears; adding a row moves focus nowhere either.',
+    'Index the names ("Remove guest 2"), move focus to the previous row or the Add button after a removal, focus the new row\'s first input after an add, and announce the change politely.',
+    ['ENG-2934', 'ENG-2935'], ['4.1.2', '2.4.3', '2.4.6']),
+
+  r('components', 'update', 'PhoneField is named only by its placeholder',
+    'checkout/PhoneField.vue:33, :32 · consumed at GroupTeamsBlock.vue:153-157',
+    'The tel input has no label, aria-label or id/for — only a sample number as placeholder, which screen readers read as the value and which disappears on typing; the country button is named just "+1".',
+    'Add a label/labelled-by prop so the input carries a real name, name the country button "Country calling code, currently +1", and have consumers pass their visible label through.',
+    ['ENG-2939', 'ENG-2943'], ['1.3.1', '3.3.2', '4.1.2']),
+
+  r('components', 'update', 'Hints and errors live inside the field label',
+    'checkout/GroupTeamsBlock.vue:115-182 (seven fields)',
+    "Each field is an implicit label that also contains the required marker, the hint and the error, so the control's name becomes 'Organization name * Required' and the error is never exposed as an error.",
+    'Move the hint and error outside the label, give each a stable id, and reference both from the control with aria-describedby.',
+    ['ENG-2939'], ['1.3.1', '3.3.2', '4.1.2']),
+
+  r('components', 'update', 'The disabled Book Now button explains nothing',
+    'checkout/PoliciesAgreement.vue:111',
+    'The CTA is natively disabled until every agreement box is ticked, so it cannot be focused or found by keyboard and gives no reason why it is unavailable.',
+    'Use aria-disabled with an inert click handler instead, and link a persistent hint ("Agree to the property policies to continue") via aria-describedby.',
+    ['ENG-2928', 'ENG-2936'], ['3.3.2', '4.1.2']),
+
+  r('components', 'update', 'The agreement checkbox is not described by the policy text',
+    'checkout/PoliciesAgreement.vue:106-108, :68-104',
+    'The checkbox is correctly label-wrapped, but it has no aria-describedby and the policy card and accordion bodies it refers to have no ids; with several hotels all but the first are collapsed.',
+    'Give the policies region an id and point aria-describedby at it — preferably at a short plain-language summary (release date, deposit) rather than the full legal block, which otherwise reads as one flat run on every focus.',
+    ['ENG-2940'], ['1.3.1', '4.1.2']),
+
+  r('components', 'update', 'Accessibility-needs select has no name',
+    'managebooking/ProfileEditModal.vue:81-86',
+    'Unlike the other fields, this select sits in a bare div under a heading and a help paragraph, so it has no accessible name and its help text is not linked. Found while verifying — no ticket names it.',
+    'Wrap the select in a label (or point aria-labelledby at the heading) and give the help text an id referenced by aria-describedby.',
+    ['ENG-2943'], ['1.3.1', '3.3.2', '4.1.2']),
+
+  r('components', 'update', 'Confirmation page has no h1 and the room type is a div',
+    'confirmation/ConfirmationPage.vue:108, :160',
+    'The page\'s real title ("Success! Your reservation is confirmed.") is a <p>, so the outline starts at an h2, and each room type below the hotel name is a plain div.',
+    'Promote the banner title to <h1> and the room type to a heading beneath the hotel name, keeping the visual weight in CSS.',
+    ['ENG-2929', 'ENG-2937', 'ENG-2941', 'ENG-2946'], ['1.3.1', '2.4.6']),
+
+  r('components', 'update', 'Arriving at the confirmation announces nothing',
+    'confirmation/ConfirmationPage.vue:105-112',
+    'The success banner is ordinary text with no status role, is not a heading, and nothing moves focus to it after a client-side route change — so a screen-reader user arriving from checkout is never told the booking succeeded.',
+    'Make the banner title the page h1 and focus it on mount, or give the banner role="status" so arrival announces the outcome once.',
+    ['ENG-2929', 'ENG-2937', 'ENG-2946'], ['4.1.3', '2.4.3']),
+
+  r('components', 'update', 'Confirmation code is one undivided string',
+    'confirmation/ConfirmationPage.vue:122',
+    'The code carries visible label text — better than production — but label and value share one div, so there is no programmatic association, and "#" may be read as "number sign".',
+    'Mark it as <dl><dt>Confirmation number</dt><dd>…</dd>, spelling out "number" instead of relying on the glyph.',
+    ['ENG-2929'], ['1.3.1', '4.1.2']),
+
+  r('components', 'update', 'Check-in / check-out pairs are span+strong',
+    'confirmation/ConfirmationPage.vue:163-165 · details/HotelSummaryHeader.vue:63-65',
+    'The confirmation page already uses a <dl> for its meta grid, but the check-in/check-out rows and the detail header times are span/strong pairs, so the label-value relationship is only visual.',
+    'Convert both to <dl> with <dt>/<dd> pairs, matching the pattern already used elsewhere in the same file.',
+    ['ENG-2946'], ['1.3.1']),
+
+  r('components', 'update', '"Print" does not say what it prints',
+    'confirmation/ConfirmationPage.vue:128',
+    'The action is named just "Print", which out of context says nothing about what is printed (the neighbouring actions are already descriptive).',
+    'Name it "Print reservation confirmation" so the object of the action is in the accessible name.',
+    ['ENG-2929'], ['2.4.6', '4.1.2']),
+
+  r('components', 'update', 'Copy Booking Link confirms nothing',
+    'confirmation/ConfirmationPage.vue:127',
+    'The button is real and named, but it has no handler and the page has no live region, so neither sighted nor screen-reader users learn whether the copy worked.',
+    'Wire it to the clipboard and announce the result in an always-present polite region ("Link copied"), with a labelled read-only input fallback when the Clipboard API is blocked.',
+    ['ENG-2929', 'ENG-2941'], ['4.1.3']),
+
+  r('components', 'update', '"Book in Block" promises a new tab it never opens',
+    'confirmation/ConfirmationPage.vue:126',
+    'The button carries an open_in_new icon — promising a new tab — but has no destination and no warning text.',
+    'When the destination is wired, make it a real link with target and rel, and put the warning in visible or visually-hidden text rather than an aria-label that can drift from the visible label.',
+    ['ENG-2941'], ['4.1.2', '2.4.4']),
+
+  r('components', 'update', 'Manage Booking has no h1',
+    'managebooking/ManageBooking.vue:132 (first heading is an h2); the member name is a <strong>',
+    'The account page has no level-1 heading at all, so any reservations list or group-block list added here inherits a broken outline.',
+    'Add one page-level h1 above the rail and content panel, leaving the section h2s beneath it.',
+    ['ENG-2942', 'ENG-2943', 'ENG-2945', 'ENG-2950', 'ENG-2951'], ['1.3.1', '2.4.6']),
+
+  r('components', 'update', 'Global nav brand and Contact Us are dead links',
+    'components/GlobalNav.vue:63, :66-85 (and the mobile card at :97-118)',
+    'Both are <a href="#" @click.prevent>: announced as links to nowhere, in the Tab order, with no expanded state — and Contact Us actually opens a menu panel.',
+    'Give the brand a real destination, and make Contact Us a native <button> using the disclosure pattern (aria-expanded + aria-controls on the panel, which holds contact details rather than menu items).',
+    ['ENG-2922', 'ENG-2930', 'ENG-2945'], ['4.1.2', '2.4.4', '2.1.1']),
+
+  r('components', 'update', 'Footer legal line has no links',
+    'components/PageFrame.vue:29',
+    'Terms, Privacy and Contact are one span of plain text, so presto has no privacy link to reach by keyboard or to check for contrast.',
+    'Split the line into real anchors using --ds-color-link (18.24:1) with a persistent underline, so the links are distinguishable by more than color.',
+    ['ENG-2925'], ['2.4.4', '1.4.1', '1.4.3']),
+
+  r('components', 'update', 'Table status chips fail contrast',
+    'stories/data-display/Table.stories.js:45-46',
+    'The status chips render white text on Quasar $positive (3.30:1) and $warning (1.53:1); only $negative passes.',
+    'Replace the Quasar color names with the new status tokens — Confirmed → Green 700, Pending → Amber 700, Cancelled → Red 700 — or swap the chip for the new status pill.',
+    ['ENG-2949', 'ENG-2952'], ['1.4.3']),
+
+  r('components', 'update', "QTable's title prop is not a heading",
+    'stories/data-display/Table.stories.js:41',
+    'The title prop renders as a styled div that looks like the section heading but is not one — the same defect as the count titles the audit flags in production.',
+    'Drop the title prop, render a real heading in the #top slot, and document that convention for every table.',
+    ['ENG-2951'], ['1.3.1', '2.4.6']),
+
+  r('components', 'new', 'No status pill component',
+    'components/ — no q-chip or pill component exists anywhere in src/presto',
+    'There is no shared status pill, so every surface hand-rolls a chip with a raw Quasar color and there is nowhere to enforce a passing fill, a text label or an icon.',
+    'Add a status pill that resolves the new status tokens, always renders a text label, and shows a distinct aria-hidden icon per status so same-color opposites (Upcoming vs Expired, Waitlisted vs Past) are distinguishable without color.',
+    ['ENG-2949', 'ENG-2952'], ['1.4.1', '1.4.3']),
+
+  r('components', 'new', 'No deadline / release-date badge',
+    'nearest today: confirmation/ConfirmationPage.vue:130-132 (release date as plain text)',
+    'presto-2026 has no deadline or cutoff badge, so there is no component to carry the urgency production shows with a failing red pill (2.91:1).',
+    'Build one on Red 700 #B91C1C over Red 50 (5.91:1 on the tint) and always include the word "Deadline" or "Due", so urgency is not carried by red alone; do not use the red-600 danger token on the tint (4.41:1).',
+    ['ENG-2942'], ['1.4.3', '1.4.1']),
+
+  r('components', 'new', 'No group reservation roster',
+    'would join components/managebooking/',
+    'There is no roster of guests booked into a block anywhere in Storybook or the prototype, so there is no accessible pattern to replace production\'s card-based roster.',
+    'Build it as a real <table> with a caption, column headers and the guest name as a row header, inside a focusable scroll region — or, if cards must stay on mobile, a native list with a visible per-card heading and a <dl>.',
+    ['ENG-2942'], ['1.3.1']),
+
+  r('components', 'new', 'No deposit alert banner',
+    'deposit terms today are static prose inside checkout/PoliciesAgreement.vue and confirmation/ConfirmationPage.vue',
+    'presto-2026 shows no deposit alert at all, so production\'s five untitled yellow banners have no redesign counterpart.',
+    'Build one banner component (not five branches) with a text "Deposit:" prefix so meaning is not carried by the yellow fill, role="alert" only when the deposit changes in response to an action, and one instance per state.',
+    ['ENG-2946'], ['4.1.3', '1.4.1']),
+
+  r('components', 'new', 'No waitlist state for sold-out rooms',
+    'details/RoomCardReserve.vue:65-69 (sold-out shows a disabled "Unavailable" button)',
+    'presto-2026 has no Join Waitlist control anywhere, so there is no equivalent for production\'s waitlist links.',
+    'Design a waitlist state as a native button whose name includes the room type ("Join waitlist for Deluxe King"), never an anchor without href, with the resulting confirmation announced politely.',
+    ['ENG-2933'], ['2.1.1', '4.1.2', '2.4.6']),
+
+  r('components', 'update', 'Availability panel scroll region is not keyboard-reachable',
+    'browse/RoomAvailability.vue (.rav__track)',
+    'The room-type strip scrolls horizontally but has no tabindex, so a keyboard user cannot reach or scroll it. Found while remediating the card, not named by any ticket.',
+    'Give the track tabindex="0" with role="group" and a name ("Room types") so it is focusable and announced (axe: scrollable-region-focusable).',
+    ['ENG-2924'], ['2.1.1']),
+
+  r('components', 'update', 'Availability carousel dots are 9×9px',
+    'browse/RoomAvailability.vue (.rav__dots button)',
+    'The pagination dots render at 9×9 CSS px — well under the 24×24 minimum — and the panel is one click away on every result card. Found while remediating, not named by any ticket.',
+    'Pad each dot button to a 24×24 target with background-clip: content-box so the painted dot still reads as ~10px, and close the gap so the cluster stays compact.',
+    ['ENG-2924'], ['2.5.8']),
+
+  r('components', 'update', 'Choice chip borders fail the non-text bar',
+    'components/DsChoiceChips.vue (chip border → --ds-color-border-bold)',
+    'Chip boundaries use Slate 400 at 2.56:1 against white. A UI-component boundary needs 3:1. Found while remediating; no ticket names it, and DsChoiceChips is otherwise the system\'s best accessible-control example.',
+    'Move the chip border to a token at or above 3:1 against the surface (Slate 500 #64748B, 4.76:1) so the control boundary is perceivable.',
+    ['ENG-2930'], ['1.4.11']),
+
+  /* ---------------------------------------------------------- patterns */
+  r('patterns', 'update', 'No form field uses aria-invalid or aria-describedby',
+    'grep across src/presto returns zero hits for both; orphaned errors at PaymentForm.vue:56,61,70,77 and ReservationGuests.vue:130-148',
+    'Errors are shown only as red text plus a border class, so across the entire design system no screen reader ever hears that a field is invalid or why.',
+    'Establish one field-error convention: a deterministic id per message, aria-invalid on the control itself (never the wrapper), aria-describedby pointing at the message, both cleared on correction — encoded once in the Forms pattern so it cannot drift.',
+    ['ENG-2923', 'ENG-2927', 'ENG-2928', 'ENG-2939', 'ENG-2943', 'ENG-2947'], ['3.3.1', '1.3.1', '4.1.2', '1.4.1']),
+
+  r('patterns', 'update', 'No id/for pairs and no autocomplete tokens',
+    'checkout/GroupTeamsBlock.vue, PaymentForm.vue, ReservationGuests.vue, managebooking/ProfileEditModal.vue, stories/patterns/Forms.stories.js',
+    'Every field relies on an implicit wrapping label; no component emits an id/for pair, and only 9 autocomplete and 7 required attributes exist in the whole system — including on name, address, phone and card fields.',
+    'Adopt an explicit id/for convention (ids from a stable key so repeated rows never collide), add required/aria-required to asterisked fields, and add the standard autocomplete tokens across the checkout and profile forms.',
+    ['ENG-2927', 'ENG-2928', 'ENG-2935', 'ENG-2939', 'ENG-2943'], ['1.3.5', '3.3.2', '1.3.1']),
+
+  r('patterns', 'update', 'Failed submits neither move focus nor announce',
+    'checkout/steps/StepContactInfo.vue:41 · steps/StepPayment.vue:19 · PaymentForm.vue:31-33 — no focus() or scrollIntoView() exists in checkout/, managebooking/ or confirmation/',
+    'Pressing Next on an incomplete form only paints red "Required" text down the page: focus stays on the button, nothing is announced, and StepPayment does not validate at all.',
+    'Add a shared error summary (role="alert", tabindex="-1", "There are N errors" with links to each field) that takes focus on failed submit — or at minimum focus the first invalid control — and make every step validate before advancing.',
+    ['ENG-2927', 'ENG-2928', 'ENG-2934', 'ENG-2936', 'ENG-2938', 'ENG-2943', 'ENG-2947'], ['3.3.1', '2.4.3', '4.1.3']),
+
+  r('patterns', 'update', 'Related fields are never grouped',
+    'checkout/PaymentForm.vue:50-79 (card) · ReservationGuests.vue:190-235 (address) — <fieldset> appears zero times in src/presto',
+    'Payment and billing inputs are flat label siblings in a div grid, so "City" and "Postal" are announced with no indication that they belong to the billing address rather than the guest.',
+    'Wrap the card block in <fieldset><legend>Card details</legend> and the address block in <fieldset><legend>Billing address</legend>, styling the legend to keep the current visual headings.',
+    ['ENG-2927', 'ENG-2935'], ['1.3.1']),
+
+  r('patterns', 'update', 'Heading levels are chosen for size, not structure',
+    'checkout/CheckoutPage.vue:150 (the only h1, with step bodies at h4) · confirmation/ and managebooking/ have none',
+    'Only the checkout page emits an h1, its step bodies skip two levels, and the confirmation and account screens start at h2 — heading level is being picked visually.',
+    'Document and enforce one h1 per page component with no skipped levels (h1 → step h2 → section h3/h4), keeping the visual scale in CSS, and add the rule to the foundations docs.',
+    ['ENG-2938', 'ENG-2941', 'ENG-2942', 'ENG-2943', 'ENG-2945', 'ENG-2946'], ['1.3.1', '2.4.6']),
+
+  r('patterns', 'update', 'Alerts and status banners are never announced',
+    'stories/feedback/Alert.stories.js:41-49 — only HoldTimerPill.vue:49, AddedToCartToast.vue:29 and QuantityStepper.vue:46 carry live-region roles anywhere',
+    "presto's Alert is a styled div with no role, so it is not announced when it appears after an action.",
+    'Give error and warning severities role="alert" on a container that stays mounted (swap the text, never v-if the region), and document that a banner present at page load needs a heading instead, because an alert already in the DOM is never announced.',
+    ['ENG-2950', 'ENG-2953'], ['4.1.3', '3.3.1']),
+
+  r('patterns', 'update', 'Spinners and loading overlays announce nothing',
+    'stories/feedback/Progress.stories.js:34-35 · stories/feedback/Backdrop.stories.js:26',
+    "Spinners render with no role or text, and Quasar's Loading plugin gives its overlay no role or aria-live even when passed a message, so neither state reaches a screen reader.",
+    'Ship the pattern: a role="status" region that stays mounted and whose text changes ("Loading reservations…" → ""), with the spinner itself aria-hidden.',
+    ['ENG-2950', 'ENG-2951'], ['4.1.3']),
+
+  r('patterns', 'update', 'Pagination landmark is unnamed and page changes are silent',
+    'stories/navigation/Pagination.stories.js:21, :24',
+    'QPagination emits role="navigation" and aria-current in Quasar 2.19.3, but the landmark has no name — announced as just "navigation" — and no story announces the new page after a change.',
+    'Pass aria-label to QPagination itself (never wrap it in a <nav>, which nests a second landmark) and pair it with an sr-only polite region emitting "Page N of M".',
+    ['ENG-2951'], ['1.3.1', '4.1.3']),
+
+  r('patterns', 'update', 'Tooltips never open for keyboard users',
+    'checkout/PaymentForm.vue:72 and the same pattern in PriceDetailsDialog.vue, CartReview.vue, OrderSummary.vue, ConfirmationPage.vue',
+    'Every info trigger is already a named native button, but presto-2026 ships Quasar 2.19.3, whose tooltip opens only on hover or touch and sets no aria-describedby — so keyboard and screen-reader users never get the tip text.',
+    'Upgrade presto-2026 to Quasar 2.33+ (where the tooltip opens on focus, links aria-describedby and closes on Escape), or attach the hint with aria-describedby, and document the info-button pairing as the hint pattern.',
+    ['ENG-2933', 'ENG-2935', 'ENG-2954'], ['1.4.13', '4.1.2', '2.1.1']),
+
+  r('patterns', 'new', 'No convention for links that open a new window',
+    'components/PageFrame.vue:29 — no window.open or target="_blank" exists anywhere in src/presto',
+    'No presto component opens a new window yet, so the system has no documented pattern for one — and the footer legal links will be the first to need it.',
+    'Define it before those links ship: a real anchor with target and rel="noopener noreferrer", an aria-hidden icon, and an sr-only "(opens in a new tab)" suffix that extends the visible name rather than replacing it.',
+    ['ENG-2952', 'ENG-2954'], ['2.4.4']),
+
+  r('patterns', 'new', 'No discounted / strikethrough price pattern',
+    'no line-through, <s> or <del> anywhere in src/presto; future home: details/RoomCardReserve.vue, CartReview.vue',
+    'presto-2026 shows exactly one price per room — no "was" price, no strikethrough, no discount treatment — so there is no answer for the discounted rates production displays.',
+    'Design it before discounts ship: sr-only "Original price" / "Discounted price" labels around a <s>/<del> original and the current price, with a strike color at 4.5:1 or better (not the subtlest token).',
+    ['ENG-2926'], ['1.3.1', '1.4.3']),
+
+  r('patterns', 'new', 'No destructive-confirm dialog',
+    'would be built on components/DsModal.vue',
+    'presto-2026 has no cancel-reservation or waive-fee dialog, so the link-as-action defect production has does not exist here — but neither does the confirm pattern.',
+    'Design the cancellation flow on DsModal: a real submit button in a form (no link-as-action, no hidden duplicate control), role="alertdialog" with aria-describedby for the fee variant, a descriptive title rather than "ALERT!", and initial focus on the least-destructive action.',
+    ['ENG-2948'], ['4.1.2', '2.1.1', '2.4.3']),
+
+  r('patterns', 'new', 'No guest lookup screen',
+    'would join components/managebooking/ (ManageBooking assumes a signed-in user)',
+    'There is no guest lookup form at all — "Manage Booking" opens a signed-in account page — so the system has no confirmation-number field or lookup-error pattern.',
+    'Design a lookup screen with one h1, a single label per control plus help text linked by aria-describedby (never a second label), a focusable role="alert" failure block, and aria-invalid on both inputs.',
+    ['ENG-2943'], ['1.3.1', '2.4.6', '3.3.1', '3.3.2']),
+
+  r('patterns', 'new', 'No reservations list with per-card actions',
+    'would join components/managebooking/ManageBooking.vue as a new section',
+    'There is no list of reservation cards and no per-card manage link, so there is no pattern for disambiguating repeated link text.',
+    'Build it with an h1 page title, an h2 hotel name per card, and per-card links whose name starts with the visible text and adds the distinguishing detail as real visually-hidden text ("Manage Reservation at [hotel], confirmation [id]").',
+    ['ENG-2945'], ['2.4.4', '1.3.1', '2.4.6']),
+
+  r('patterns', 'new', 'No organizer group-block dashboard',
+    'would sit beside components/managebooking/ManageBooking.vue',
+    'Manage Booking is a guest account page with no group-block list, deadlines or roster, in Storybook or the prototype.',
+    'Design a "Manage your group blocks" screen with a single h1, an h2 list heading and per-block h3s, reusing the existing card and list primitives — the outline must not start at h3 the way production does.',
+    ['ENG-2942'], ['1.3.1', '2.4.6']),
+]

@@ -75,7 +75,7 @@ const preview = {
     options: {
       storySort: {
         order: [
-          'Overview', ['Introduction', 'All Issues', 'Cross-Check Agents'],
+          'Overview', ['Introduction', 'All Issues', 'Design System Impact', 'Cross-Check Agents'],
           'Epic 1 – fuse',
           'Epic 2 – platform Reservation Flow',
           'Epic 3 – platform Group Block Flow',
