@@ -1,0 +1,12 @@
+{
+  "name": "presto-prototype-a11y-mobile",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "comment": "This folder has no dependencies of its own — vue/vite resolve up the tree to the repo's node_modules. A bare `vite` isn't on PATH here, so the scripts invoke the root binary directly (the deploy workflow does the same). `dev` needs the booking prototype running on 6100 (pnpm --dir ../prototype dev) — it's embedded in the phone frame.",
+  "scripts": {
+    "dev": "node ../node_modules/vite/bin/vite.js --port 5174 --host",
+    "build": "node ../node_modules/vite/bin/vite.js build",
+    "preview": "node ../node_modules/vite/bin/vite.js preview --port 5174"
+  }
+}

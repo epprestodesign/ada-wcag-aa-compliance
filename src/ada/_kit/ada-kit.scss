@@ -300,3 +300,17 @@
   &__name { margin: 0; font-size: 16px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
   &__count { margin: 0; font-size: 13px; }
 }
+
+// Overview — design system impact table
+.ada-table--impact {
+  min-width: 1080px;
+  th[scope="row"] { width: 30%; }
+  td:nth-child(2) { width: 24%; }
+  td:nth-child(3) { width: 26%; }
+  td:nth-child(4) { width: 13%; }
+  td:nth-child(5) { width: 7%; }
+  .ada-impact__item { display: block; font-weight: 700; margin-top: 4px; }
+  .ada-impact__target { display: block; margin-top: 2px; font-size: 11px; color: var(--ds-color-text-subtle); word-break: break-word; }
+  .ada-impact__proposed { color: var(--ds-color-text); background: var(--ds-palette-green-50); }
+  .ada-impact__sc { display: inline-block; margin: 0 4px 2px 0; abbr { text-decoration: none; } }
+}

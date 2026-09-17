@@ -38,6 +38,26 @@ jobs:
           # Public URL of the separately-hosted Presto imagery library (no secret).
           VITE_IMAGERY_URL: "https://epprestodesign.github.io/presto-ds-imagery"
 
+      # Accessible prototypes — separate Vite apps that import the remediated
+      # design system from src/presto-a11y and ship nested under the Storybook
+      # site, exactly like presto-2026 does.
+      - name: Build accessible prototype (desktop)
+        working-directory: prototype
+        run: node ../node_modules/vite/bin/vite.js build --base=./
+        env:
+          VITE_IMAGERY_URL: "https://epprestodesign.github.io/presto-ds-imagery"
+          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+
+      - name: Nest prototype under Storybook
+        run: cp -r prototype/dist storybook-static/prototype
+
+      - name: Build accessible prototype (mobile device frame)
+        working-directory: prototype-mobile
+        run: node ../node_modules/vite/bin/vite.js build --base=./
+
+      - name: Nest mobile prototype under Storybook
+        run: cp -r prototype-mobile/dist storybook-static/prototype-mobile
+
       - uses: actions/upload-pages-artifact@v5
         with:
           path: storybook-static

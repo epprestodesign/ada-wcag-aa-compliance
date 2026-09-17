@@ -1,0 +1,95 @@
+// AUTO-GENERATED — semantic color tokens (brand = Navy, neutrals = Slate). Tier 2.
+// Reference Tier-1 primitives. Components & utilities consume ONLY these.
+:root {
+
+  /* Text */
+  --ds-color-text: var(--ds-palette-slate-900);
+  --ds-color-text-subtle: var(--ds-palette-slate-600);
+  /* ADA audit: Slate 400 is 2.56:1 on white and was used for real sentences.
+     The text role now points at Slate 500 (4.76:1), one step lighter than
+     --ds-color-text-subtle; Slate 400 survives only as decoration below. */
+  --ds-color-text-subtlest: var(--ds-palette-slate-500);
+  /* Non-text only: placeholders, disabled fills, rules. Never body copy. */
+  --ds-color-text-decorative: var(--ds-palette-slate-400);
+  --ds-color-text-inverse: #FFFFFF;
+  --ds-color-text-disabled: var(--ds-palette-slate-300);
+  --ds-color-text-brand: var(--ds-palette-navy-900);
+  --ds-color-text-danger: var(--ds-palette-red-600);
+  /* ADA audit: red-600 on the red-50 tint is 4.41:1. Use this pair for danger
+     text drawn on --ds-color-background-danger (7.60:1). */
+  --ds-color-text-danger-on-tint: var(--ds-palette-red-800);
+  --ds-color-text-warning: var(--ds-palette-yellow-700);
+  /* ADA audit: nine components painted urgency copy in raw orange-600
+     (3.56:1). Orange 700 keeps the hue and passes at 5.18:1. */
+  --ds-color-text-warning-strong: var(--ds-palette-orange-700);
+  --ds-color-text-success: var(--ds-palette-green-700);
+  --ds-color-text-info: var(--ds-palette-blue-600);
+
+  /* Link */
+  --ds-color-link: var(--ds-palette-navy-900);
+  --ds-color-link-visited: var(--ds-palette-navy-700);
+
+  /* Icon */
+  --ds-color-icon: var(--ds-palette-slate-900);
+  --ds-color-icon-subtle: var(--ds-palette-slate-600);
+  --ds-color-icon-inverse: #FFFFFF;
+  --ds-color-icon-disabled: var(--ds-palette-slate-300);
+  /* ADA audit: the rating star was a literal #F59E0B (2.15:1). Quasar draws it
+     as an icon-font glyph — a text node — so it is held to 4.5:1, not the 3:1
+     non-text bar. Amber 700 = 5.02:1. */
+  --ds-color-icon-rating: var(--ds-palette-amber-700);
+
+  /* Border */
+  --ds-color-border: var(--ds-palette-slate-200);
+  --ds-color-border-bold: var(--ds-palette-slate-400);
+  --ds-color-border-brand: var(--ds-palette-navy-900);
+  --ds-color-border-disabled: var(--ds-palette-slate-200);
+  --ds-color-border-focused: var(--ds-palette-navy-900);
+
+  /* Background · neutral */
+  --ds-color-background-neutral: var(--ds-palette-slate-100);
+  --ds-color-background-neutral-subtle: #00000000;
+  --ds-color-background-neutral-bold: var(--ds-palette-slate-900);
+  --ds-color-background-input: #FFFFFF;
+
+  /* Background · brand & selected */
+  --ds-color-background-brand-subtlest: var(--ds-palette-navy-50);
+  --ds-color-background-brand-bold: var(--ds-palette-navy-900);
+  --ds-color-background-selected: var(--ds-palette-navy-100);
+  --ds-color-background-selected-bold: var(--ds-palette-navy-900);
+
+  /* Background · status */
+  --ds-color-background-danger: var(--ds-palette-red-50);
+  --ds-color-background-danger-bold: var(--ds-palette-red-600);
+  --ds-color-background-warning: var(--ds-palette-yellow-50);
+  --ds-color-background-warning-bold: var(--ds-palette-yellow-400);
+  --ds-color-background-success: var(--ds-palette-green-50);
+  --ds-color-background-success-bold: var(--ds-palette-green-600);
+  --ds-color-background-info: var(--ds-palette-blue-50);
+  --ds-color-background-info-bold: var(--ds-palette-blue-600);
+  --ds-color-background-discovery: var(--ds-palette-violet-50);
+  --ds-color-background-discovery-bold: var(--ds-palette-violet-600);
+
+  /* Status — ADA audit. presto-2026 had no status tokens, so surfaces fell back
+     to Quasar's $positive (white text 3.30:1) and $warning (1.53:1). Each fill
+     below carries white text at 4.5:1 or better; the -tint pair is for subtle
+     treatments. Status must never be carried by color alone — pair with a label
+     and an icon (see the status-pill proposal). */
+  --ds-color-status-confirmed: var(--ds-palette-green-700);      /* 5.02:1 */
+  --ds-color-status-processed: var(--ds-palette-emerald-700);    /* 5.48:1 */
+  --ds-color-status-pending: var(--ds-palette-amber-700);        /* 5.02:1 */
+  --ds-color-status-cancelled: var(--ds-palette-red-700);        /* 6.47:1 */
+  --ds-color-status-inactive: var(--ds-palette-slate-600);       /* 7.58:1 */
+  --ds-color-status-confirmed-tint: var(--ds-palette-green-50);
+  --ds-color-status-processed-tint: var(--ds-palette-emerald-50);
+  --ds-color-status-pending-tint: var(--ds-palette-amber-50);
+  --ds-color-status-cancelled-tint: var(--ds-palette-red-50);
+  --ds-color-status-inactive-tint: var(--ds-palette-slate-100);
+
+  /* Surface */
+  --ds-color-surface: #FFFFFF;
+  --ds-color-surface-canvas: #F9F9FA;   /* page/body background (matches Presto) */
+  --ds-color-surface-sunken: var(--ds-palette-slate-50);
+  --ds-color-surface-raised: #FFFFFF;
+  --ds-color-surface-overlay: #FFFFFF;
+}
