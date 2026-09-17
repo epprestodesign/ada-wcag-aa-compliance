@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "community-access": {
+      "source": {
+        "source": "github",
+        "repo": "Community-Access/accessibility-agents"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "accessibility-agents@community-access": true
+  }
+}
